@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FluxDevise — Convertisseur de Devises & Courbe en Direct</title>
+  <meta name="description" content="Convertisseur de devises en temps réel avec graphique dynamique en direct, données historiques et taux officiels du marché des changes.">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Icône SVG intégrée -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💱</text></svg>">
+</head>
+<body>
+
+  <!-- ========================================================================
+       En-tête de l'application
+       ======================================================================== -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">💱</div>
+        <div class="brand-text">
+          <h1>FluxDevise</h1>
+          <span class="brand-tagline">Convertisseur & Courbe en Direct</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div id="liveStatusBadge" class="status-tag live">
+          <span class="pulse-dot active"></span> MARCHÉ EN DIRECT
+        </div>
+
+        <button id="themeToggleBtn" class="icon-btn" title="Changer de thème (Sombre/Clair)" aria-label="Basculer le thème">
+          <span class="theme-icon">☀️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       Ruban Défilant des Paires Phares (Ticker)
+       ======================================================================== -->
+  <div class="ticker-strip">
+    <div class="ticker-track" id="popularTicker">
+      <!-- Rempli dynamiquement en JS -->
+      <div class="ticker-item"><span class="ticker-pair">EUR/USD</span> <span class="ticker-rate">Chargement...</span></div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Contenu Principal (Grille 2 Colonnes)
+       ======================================================================== -->
+  <main class="main-content">
+    <div class="grid-layout">
+
+      <!-- ====================================================================
+           Colonne Gauche : Convertisseur & Matrice
+           ==================================================================== -->
+      <section class="converter-column">
+        <div class="card converter-card">
+          <div class="card-title">
+            <span>Convertisseur de Monnaie</span>
+            <button id="refreshBtn" class="btn-secondary" title="Actualiser le cours actuel">
+              <span>↻</span> Actualiser
+            </button>
+          </div>
+
+          <!-- Saisie du Montant -->
+          <div class="amount-group">
+            <label for="amountInput" class="input-label">Montant à convertir</label>
+            <div class="amount-input-wrapper">
+              <input type="number" id="amountInput" class="amount-input" min="0" step="any" value="100" placeholder="0.00">
+            </div>
+            <div class="preset-chips">
+              <button type="button" class="preset-btn" data-add="10">+10</button>
+              <button type="button" class="preset-btn" data-add="50">+50</button>
+              <button type="button" class="preset-btn" data-add="100">+100</button>
+              <button type="button" class="preset-btn" data-add="500">+500</button>
+              <button type="button" class="preset-btn" data-add="1000">+1 000</button>
+              <button type="button" class="preset-btn" data-add="reset">100</button>
+            </div>
+          </div>
+
+          <!-- Sélecteurs Devises & Inversion -->
+          <div class="currency-selector-row">
+            <div class="selector-field">
+              <label class="input-label">De (Source)</label>
+              <button type="button" id="fromSelectBtn" class="currency-btn">
+                <!-- Rempli en JS -->
+              </button>
+            </div>
+
+            <div class="swap-btn-container">
+              <button type="button" id="swapBtn" class="swap-btn" title="Inverser les devises" aria-label="Inverser les deux devises">
+                <span class="swap-icon">⇄</span>
+              </button>
+            </div>
+
+            <div class="selector-field">
+              <label class="input-label">Vers (Cible)</label>
+              <button type="button" id="toSelectBtn" class="currency-btn">
+                <!-- Rempli en JS -->
+              </button>
+            </div>
+          </div>
+
+          <!-- Bloc Résultat -->
+          <div class="result-card">
+            <div class="result-header">
+              <span class="result-caption">Montant Converti</span>
+              <span id="lastUpdateBadge" class="timestamp-text">Mis à jour</span>
+            </div>
+
+            <div class="result-main">
+              <span id="convertedValue" class="converted-value">0,00</span>
+              <span id="convertedCurrency" class="converted-currency">USD ($)</span>
+            </div>
+
+            <div class="rates-breakdown">
+              <div class="rate-line">
+                <span>Taux de change direct :</span>
+                <strong id="unitRateText">1 EUR = 1.0968 USD</strong>
+              </div>
+              <div class="rate-line">
+                <span>Taux inverse :</span>
+                <strong id="inverseRateText">1 USD = 0.9117 EUR</strong>
+              </div>
+            </div>
+
+            <div class="result-footer">
+              <button id="copyBtn" class="btn-secondary">
+                <span>📋</span> Copier le résultat
+              </button>
+              <span class="timestamp-text">Taux moyen du marché interbancaire</span>
+            </div>
+          </div>
+
+          <!-- Tableau de Conversion Rapide -->
+          <div class="matrix-card">
+            <div class="card-title" style="margin-bottom: 8px;">
+              <span style="font-size: 0.95rem;">Tableau de Conversion Rapide</span>
+            </div>
+            <div class="matrix-container">
+              <div class="matrix-column">
+                <h4 id="matrixFromTitle">EUR vers USD</h4>
+                <div class="matrix-table" id="matrixFromTable"></div>
+              </div>
+              <div class="matrix-column">
+                <h4 id="matrixToTitle">USD vers EUR</h4>
+                <div class="matrix-table" id="matrixToTable"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           Colonne Droite : Graphique en Direct & Statistiques
+           ==================================================================== -->
+      <section class="chart-column">
+        <div class="card chart-card">
+          <!-- En-tête du graphique -->
+          <div class="chart-header">
+            <div class="chart-meta">
+              <span id="chartPairTitle" class="chart-pair">EUR / USD</span>
+              <span id="chartCurrentRate" class="chart-live-rate">1.0968</span>
+              <span id="chartDeltaBadge" class="delta-badge positive">▲ +0.00%</span>
+            </div>
+
+            <!-- Filtres de Période -->
+            <div class="timeframe-selector">
+              <button type="button" class="timeframe-btn active" data-timeframe="24h">24H Direct</button>
+              <button type="button" class="timeframe-btn" data-timeframe="7d">7J</button>
+              <button type="button" class="timeframe-btn" data-timeframe="1m">1M</button>
+              <button type="button" class="timeframe-btn" data-timeframe="6m">6M</button>
+              <button type="button" class="timeframe-btn" data-timeframe="1y">1A</button>
+              <button type="button" class="timeframe-btn" data-timeframe="5y">5A</button>
+            </div>
+          </div>
+
+          <!-- Conteneur Canvas Haute Précision -->
+          <div class="chart-wrapper">
+            <canvas id="forexChart"></canvas>
+            <div id="chartTooltip" class="chart-tooltip"></div>
+          </div>
+
+          <!-- Statistiques du Marché sur la période -->
+          <div class="market-stats-grid">
+            <div class="stat-box">
+              <span class="stat-label">Plus Haut (Période)</span>
+              <span id="statHigh" class="stat-value">--</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Plus Bas (Période)</span>
+              <span id="statLow" class="stat-value">--</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Taux Moyen</span>
+              <span id="statAvg" class="stat-value">--</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Variation Totale</span>
+              <span id="statChange" class="stat-value">--</span>
+            </div>
+          </div>
+
+          <!-- Bannière Informations & Source -->
+          <div class="info-banner">
+            <div class="info-icon">⚡</div>
+            <div class="info-text">
+              <h4>Flux en direct & Données Certifiées</h4>
+              <p>Les taux sont actualisés en continu selon les cours officiels de référence de la Banque Centrale Européenne (BCE) et les flux de liquidité interbancaires mondiaux.</p>
+            </div>
+            <div style="margin-left: auto;">
+              <button id="liveToggleBtn" class="btn-secondary" style="white-space: nowrap;">
+                ⏸ Pause Live
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ========================================================================
+       Modale de Sélection : Devise Source (De)
+       ======================================================================== -->
+  <div id="fromModal" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Choisir la devise source</h3>
+        <button type="button" class="modal-close" aria-label="Fermer">✕</button>
+      </div>
+      <div class="modal-search">
+        <input type="text" id="fromSearch" class="search-input" placeholder="Rechercher (ex: USD, Dollar, États-Unis)..." autocomplete="off">
+      </div>
+      <div class="modal-body" id="fromList"></div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Modale de Sélection : Devise Cible (Vers)
+       ======================================================================== -->
+  <div id="toModal" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Choisir la devise cible</h3>
+        <button type="button" class="modal-close" aria-label="Fermer">✕</button>
+      </div>
+      <div class="modal-search">
+        <input type="text" id="toSearch" class="search-input" placeholder="Rechercher (ex: EUR, Euro, France)..." autocomplete="off">
+      </div>
+      <div class="modal-body" id="toList"></div>
+    </div>
+  </div>
+
+  <!-- Toast de notification -->
+  <div id="toast" class="toast">Action effectuée</div>
+
+  <!-- ========================================================================
+       Pied de page
+       ======================================================================== -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div>
+        <strong>FluxDevise</strong> © 2026 — Conçu en HTML5, CSS3 & JavaScript pur (sans framework).
+      </div>
+      <div class="footer-links">
+        <span>Données : Banque Centrale Européenne (BCE) & Frankfurter</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts JavaScript modulaires sans framework -->
+  <script src="js/currencies.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
